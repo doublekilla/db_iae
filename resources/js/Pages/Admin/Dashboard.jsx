@@ -43,39 +43,74 @@ export default function Dashboard({ stats, popularFields, recentBookings, revenu
                     <h3 className="font-semibold text-gray-900 mb-4">📈 Pendapatan 7 Hari Terakhir</h3>
                     {(() => {
                         const chartData = revenueChart || [];
-                        const maxVal = Math.max(...chartData.map(d => Number(d.revenue) || 0), 1);
-                        const barAreaHeight = 140; // pixels for bar area
+                        const values = chartData.map(d => Number(d.revenue) || 0);
+                        const maxVal = Math.max(...values, 1);
+                        const barAreaHeight = 160;
 
-                        const formatValue = (val) => {
-                            const num = Number(val) || 0;
+                        const formatCurrency = (num) => {
                             if (num >= 1000000) return `${(num / 1000000).toFixed(1)}jt`;
                             if (num >= 1000) return `${(num / 1000).toFixed(0)}k`;
                             if (num > 0) return num.toLocaleString('id-ID');
                             return '0';
                         };
 
-                        return (
-                            <div className="flex items-end gap-3" style={{ height: `${barAreaHeight + 40}px` }}>
-                                {chartData.map((d, i) => {
-                                    const revenue = Number(d.revenue) || 0;
-                                    const barHeight = Math.max((revenue / maxVal) * barAreaHeight, revenue > 0 ? 8 : 4);
+                        const formatFullCurrency = (num) => `Rp ${Number(num).toLocaleString('id-ID')}`;
 
-                                    return (
-                                        <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                                            <span className="text-[10px] text-gray-500 font-semibold mb-1">
-                                                {formatValue(revenue)}
-                                            </span>
-                                            <div
-                                                className="w-full rounded-t-lg relative overflow-hidden transition-all duration-500 ease-out"
-                                                style={{ height: `${barHeight}px`, minWidth: '20px' }}
-                                            >
-                                                <div className="absolute inset-0 bg-gradient-to-t from-accent to-accent-light opacity-90" />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
-                                            </div>
-                                            <span className="text-[9px] text-gray-400 mt-1.5 whitespace-nowrap">{d.date}</span>
-                                        </div>
-                                    );
-                                })}
+                        const formatDateLabel = (dateStr) => {
+                            try {
+                                const d = new Date(dateStr + 'T00:00:00');
+                                return d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' });
+                            } catch { return dateStr; }
+                        };
+
+                        const tickCount = 4;
+                        const yTicks = Array.from({ length: tickCount + 1 }, (_, i) => Math.round((maxVal / tickCount) * i));
+
+                        if (chartData.length === 0) {
+                            return <p className="text-center text-gray-400 py-8">Belum ada data</p>;
+                        }
+
+                        return (
+                            <div className="flex gap-0">
+                                <div className="flex flex-col justify-between pr-2" style={{ height: `${barAreaHeight}px` }}>
+                                    {[...yTicks].reverse().map((tick, i) => (
+                                        <span key={i} className="text-[10px] text-gray-400 text-right whitespace-nowrap leading-none">{formatCurrency(tick)}</span>
+                                    ))}
+                                </div>
+                                <div className="flex-1 relative" style={{ height: `${barAreaHeight + 32}px` }}>
+                                    {yTicks.map((tick, i) => (
+                                        <div key={i} className="absolute left-0 right-0 border-t border-gray-100" style={{ bottom: `${32 + (tick / maxVal) * barAreaHeight}px` }} />
+                                    ))}
+                                    <div className="absolute inset-0 flex items-end gap-2 pb-8">
+                                        {chartData.map((d, i) => {
+                                            const revenue = Number(d.revenue) || 0;
+                                            const ratio = revenue / maxVal;
+                                            const barHeight = revenue > 0 ? Math.max(ratio * barAreaHeight, 12) : 3;
+
+                                            return (
+                                                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                                                    <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                                                        <div className="bg-gray-800 text-white text-[10px] px-2.5 py-1.5 rounded-lg shadow-lg whitespace-nowrap text-center">
+                                                            <p className="font-bold">{formatFullCurrency(revenue)}</p>
+                                                            <p className="text-gray-300">{d.date}</p>
+                                                        </div>
+                                                        <div className="w-2 h-2 bg-gray-800 rotate-45 mx-auto -mt-1" />
+                                                    </div>
+                                                    <span className="text-[9px] text-gray-500 font-semibold mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        {formatCurrency(revenue)}
+                                                    </span>
+                                                    <div
+                                                        className="w-full rounded-t-md relative overflow-hidden transition-all duration-300 cursor-pointer group-hover:opacity-80"
+                                                        style={{ height: `${barHeight}px`, maxWidth: '52px' }}
+                                                    >
+                                                        <div className={`absolute inset-0 rounded-t-md ${revenue > 0 ? 'bg-gradient-to-t from-[#1a3a5c] to-[#c9a84c]' : 'bg-gray-200'}`} />
+                                                    </div>
+                                                    <span className="text-[9px] text-gray-400 mt-1.5 whitespace-nowrap font-medium">{formatDateLabel(d.date)}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                         );
                     })()}

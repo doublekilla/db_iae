@@ -170,6 +170,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Reports
     Route::get('/reports', [Admin\ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/download-excel', [Admin\ReportController::class, 'downloadExcel'])->name('reports.download-excel');
+    Route::get('/reports/download-pdf', [Admin\ReportController::class, 'downloadPdf'])->name('reports.download-pdf');
 });
 
 require __DIR__.'/auth.php';
